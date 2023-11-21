@@ -1,0 +1,57 @@
+use std::fs;
+use std::collections::HashMap;
+use regex::Regex;
+
+fn main() {
+
+    let unresolved_regex = Regex::new(r"(\w*): (\w*) (.) (\w*)").unwrap();
+    let resolved_regex = Regex::new(r"(\w*): (\d+)").unwrap();
+
+    let input = fs::read_to_string("input").unwrap();
+    let mut og_resolved: HashMap<String, f64> = HashMap::new();
+    let mut og_unresolved: Vec<(String, String, char, String)> = Vec::new();
+    
+    for cap in unresolved_regex.captures_iter(&input) {
+        og_unresolved.push((String::from(&cap[1]), String::from(&cap[2]), cap[3].chars().next().unwrap(), String::from(&cap[4])));
+    }
+    for cap in resolved_regex.captures_iter(&input) {
+        og_resolved.insert(String::from(&cap[1]), cap[2].parse().unwrap());
+    }
+    let mut equal_root = false;
+    let mut humn = 3587647562499.0;
+    //while !equal_root{
+        og_resolved.insert(String::from("humn"), humn);
+        let mut unresolved = og_unresolved.clone();
+        let mut resolved = og_resolved.clone();
+        'outer: loop {
+            let mut new_unresolved = unresolved.clone();
+            for (i, monke) in unresolved.iter().enumerate() {
+                if !resolved.contains_key(&monke.1) || !resolved.contains_key(&monke.3) {
+                    continue;
+                }
+                let root = monke.0 == "root";
+                let monke1 = resolved.get(&monke.1).unwrap();
+                let monke2 = resolved.get(&monke.3).unwrap();
+                if root {
+                    if monke1 == monke2 {equal_root = true} 
+                };
+                let op = monke.2;
+                let new_monke = match op {
+                    '+' => monke1 + monke2,
+                    '-' => monke1 - monke2,
+                    '*' => monke1 * monke2,
+                    '/' => monke1 / monke2,
+                    _ => panic!("UNKNOWN MONKE OP")
+                };
+                resolved.insert(monke.0.clone(), new_monke);
+                new_unresolved.remove(i);
+                if root {
+                    break 'outer
+                };
+                break;
+            }
+            unresolved = new_unresolved;
+        }
+        dbg!(resolved.get("root").unwrap());
+    //}
+}
